@@ -1,0 +1,31 @@
+{
+    "label": "Ingest - EO1_ALI",
+    "submission_type": "iteration",
+    "enable_dedup": false,
+    "params" : [
+    {
+      "name": "prod_type",
+      "from": "dataset_jpath:_type"
+    },
+    {
+      "name": "metadata",
+      "from": "dataset_jpath:_source.metadata"
+    },
+    {
+      "name": "starttime",
+      "from": "dataset_jpath:_source.starttime"
+    },
+    {
+      "name": "endtime",
+      "from": "dataset_jpath:_source.endtime"
+    },
+    {
+      "name": "location",
+      "from": "dataset_jpath:_source.location"
+    },
+    {
+      "name": "short_name",
+      "from": "dataset_jpath:_source.metadata.short_name"
+    }
+  ]
+}
