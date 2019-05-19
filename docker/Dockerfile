@@ -2,9 +2,8 @@ FROM hysds/usgs-base:latest
 MAINTAINER jlinick "Justin.P.Linick@jpl.nasa.gov"
 LABEL description="Ingest products from metadata"
 
-yum -y install unzip
-
 USER ops
+yum -y install unzip
 
 COPY . /home/ops/verdi/ops/eo1_ali
 
