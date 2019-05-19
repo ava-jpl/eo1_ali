@@ -2,7 +2,8 @@
   "command":"/home/ops/verdi/ops/eo1_ali/ingest.py",
   "imported_worker_files": {
     "/home/ops/.netrc": "/home/ops/.netrc",
-    "/home/ops/.aws": "/home/ops/.aws"
+    "/home/ops/.aws": "/home/ops/.aws",
+    "/home/ops/.usgs": "/home/ops/.usgs"
   },
   "disk_usage":"10GB",
   "recommended-queues": ["factotum-job_worker-large", "ava-job_worker-large", "ava-job_worker-small"],
