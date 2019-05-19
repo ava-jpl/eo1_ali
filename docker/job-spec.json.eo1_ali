@@ -15,6 +15,10 @@
       "destination": "context"
     },
     {
+      "name": "product_format",
+      "destination": "context"
+    },
+    {
       "name": "metadata",
       "destination": "context"
     },

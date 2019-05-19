@@ -8,6 +8,12 @@
       "from": "dataset_jpath:_type"
     },
     {
+      "name": "product_format",
+      "from": "submitter",
+      "type": "enum",
+      "enumerables": ["L1R", "L1T", "L1Gst"]
+    },
+    {
       "name": "metadata",
       "from": "dataset_jpath:_source.metadata"
     },

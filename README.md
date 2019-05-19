@@ -11,4 +11,4 @@ Job is of type iteration. It takes in an input MET-EO1_ALI product. It localizes
 
 EO1_ALI product spec is the followingc:
 
-    EO1_ALI-<sensing_start_datetime>_<sensing_end_datetime>-<version_number>
+    EO1_ALI-<product_format>-<sensing_start_datetime>_<sensing_end_datetime>-<version_number>

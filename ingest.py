@@ -17,11 +17,11 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 PROD_SHORT_NAME = 'EO1_ALI'
 VERSION = "v1.0"
-ALLOWED_EXTENSIONS = ['hdf', 'tif', 'jpg', 'jpeg', 'png']
+ALLOWED_PRODUCT_FORMATS = ['L1R', 'L1Gst', 'L1T']
 # determined globals
-PROD = "{}-{}-{}" # eg: AST_L1T-20190514T341405_20190514T341435-v1.0
+PROD = "{}-{}-{}-{}" #EO1_Hyperion-L1R-20190514T341405_20190514T341435-v1.0
 INPUT_TYPE = 'metadata-{}'.format(PROD_SHORT_NAME)
-INDEX = 'grq_{}_{}'.format(VERSION, PROD_SHORT_NAME)
+INDEX = 'grq_{}_{}-{}'.format(VERSION, PROD_SHORT_NAME, '{}')
 
 def main():
     '''Localizes and ingests product from input metadata blob'''
@@ -31,17 +31,21 @@ def main():
     prod_type = ctx.get("prod_type", False)
     if not prod_type == INPUT_TYPE:
         raise Exception("input needs to be {}. Input is of type: {}".format(INPUT_TYPE, prod_type))
+    prod_format = ctx.get("product_format", False)
+    if not prod_format or not prod_format in ALLOWED_PRODUCT_FORMATS:
+        raise Exception("input product format of {} is invalid. Must be one of type: {}".format(prod_format, ', '.join(ALLOWED_PRODUCT_FORMATS)))
+    INDEX = INDEX.format(prod_format)
     starttime = ctx.get("starttime", False)
     endtime = ctx.get("endtime", False)
     location = ctx.get("location", False)
     shortname = metadata.get('short_name')
     #ingest the product
-    ingest_product(shortname, starttime, endtime, location, metadata)
+    ingest_product(shortname, starttime, endtime, location, metadata, prod_format)
 
-def ingest_product(shortname, starttime, endtime, location, metadata):
+def ingest_product(shortname, starttime, endtime, location, metadata, prod_format):
     '''determines if the product is localized. if not localizes and ingests the product'''
     # generate product id
-    prod_id = gen_prod_id(shortname, starttime, endtime)
+    prod_id = gen_prod_id(shortname, starttime, endtime, prod_format)
     # determine if product exists on grq
     if exists(prod_id):
         print('product with id: {} already exists. Exiting.'.format(prod_id))
@@ -49,24 +53,21 @@ def ingest_product(shortname, starttime, endtime, location, metadata):
     #attempt to localize product
     print('attempting to localize product: {}'.format(prod_id))
     #build the product id for subproducts
-    start = dateutil.parser.parse(starttime).strftime('%Y%m%dT%H%M%S')
-    end = dateutil.parser.parse(endtime).strftime('%Y%m%dT%H%M%S')
-    time_str = '{}_{}'.format(start, end)
-    filename_base = '-'.join([shortname, '{}', time_str, VERSION]) + '.{}'
     #run usgs localization
     granule_id = metadata.get('title')
-    usgs_retrieve.retrieve(granule_id, shortname, prod_id, filename_base)
-    # generate product
-    dst, met = gen_jsons(prod_id, starttime, endtime, location, metadata)
-    # save the metadata fo;es
-    save_product_met(prod_id, dst, met)
+    usgs_retrieve.retrieve(granule_id, shortname, prod_id, prod_format)
+    if os.path.exists(prod_id):
+        # generate product
+        dst, met = gen_jsons(prod_id, starttime, endtime, location, metadata)
+        # save the metadata fo;es
+        save_product_met(prod_id, dst, met)
 
-def gen_prod_id(shortname, starttime, endtime):
+def gen_prod_id(shortname, starttime, endtime, prod_format):
     '''generates the product id from the input metadata & params'''
     start = dateutil.parser.parse(starttime).strftime('%Y%m%dT%H%M%S')
     end = dateutil.parser.parse(endtime).strftime('%Y%m%dT%H%M%S')
     time_str = '{}_{}'.format(start, end)
-    return PROD.format(shortname, time_str, VERSION)
+    return PROD.format(shortname, prod_format, time_str, VERSION)
 
 def exists(uid):
     '''queries grq to see if the input id exists. Returns True if it does, False if not'''
@@ -88,42 +89,6 @@ def query_es(grq_url, es_query):
     #results_list = results.get('hits', {}).get('hits', [])
     total_count = results.get('hits', {}).get('total', 0)
     return int(total_count)
-
-def localize_product(prod_id, metadata):
-    '''attempts to localize the product'''
-    if not os.path.exists(prod_id):
-        os.mkdir(prod_id)
-    for obj in metadata.get('links', []):
-        url = obj.get('href', False)
-        extension = os.path.splitext(url)[1].strip('.')
-        if extension in ALLOWED_EXTENSIONS:
-            product_path = os.path.join(prod_id, '{}.{}'.format(prod_id, extension))
-            if not os.path.exists(product_path):
-                localize(url, product_path)
-        if extension in ['jpg', 'jpeg', 'png']:
-            #attempt to generate browse
-            generate_browse(product_path, prod_id)
-
-def localize(url, prod_path):
-    '''attempts to localize the product'''
-    status = os.system('wget -O {} {}'.format(prod_path, url))
-    if status == 0:
-        #succeeds
-        if os.path.exists(prod_path):
-            return
-    raise Exception("unable to localize product from url: {}".format(url))
-
-def generate_browse(product_path, prod_id):
-    '''attempts to generate browse if it doesn't already exist'''
-    browse_path = os.path.join(prod_id, '{}.browse.png'.format(prod_id))
-    browse_small_path = os.path.join(prod_id, '{}.browse_small.png'.format(prod_id))
-    if os.path.exists(browse_path):
-        return
-    #conver to png
-    os.system("convert {} {}".format(product_path, browse_path))
-    #convert to small png
-    os.system("convert {} -resize 300x300 {}".format(product_path, browse_small_path))
-    os.remove(product_path)
 
 def gen_jsons(prod_id, starttime, endtime, location, metadata):
     '''generates ds and met json blobs'''
