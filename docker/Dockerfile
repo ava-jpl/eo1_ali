@@ -2,7 +2,7 @@ FROM hysds/usgs-base:latest
 MAINTAINER jlinick "Justin.P.Linick@jpl.nasa.gov"
 LABEL description="Ingest products from metadata"
 
-RUN yum -y install unzip
+RUN sudo yum -y install unzip
 
 USER ops
 
